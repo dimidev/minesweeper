@@ -65,6 +65,9 @@ class Cell:
     map = []
     neighbors = []
 
+    def __init__(self):
+        pass
+
     def __str__(self):
         return f"sign: {str(self.sign)}, uncovered: {self.uncovered}"
 
