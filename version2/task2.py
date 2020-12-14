@@ -44,6 +44,9 @@ class Cell:
         if row < Cell.__GRID_SIZE - 1 and column < Cell.__GRID_SIZE - 1:
             self.neighbors.append((row + 1, column + 1))
 
+    def mark_unmark(self):
+        self.marked = not self.marked
+
 
 def set_bombs():
     map = [[Cell(row, column) for row in range(GRID_SIZE)] for column in range(GRID_SIZE)]
@@ -87,6 +90,10 @@ def new_game():
     return game
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     game = new_game()
-    print(game)
+
+    for i in game[0]:
+        print(i.marked)
+        i.mark_unmark()
+        print(i.marked)
