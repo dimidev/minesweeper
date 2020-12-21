@@ -8,44 +8,53 @@ class Cell:
     __GRID_SIZE = 8
     __MINES_N = 10
 
-    sign = '.'
-    uncovered = False
-    marked = False
-    map = []
-    neighbors = []
-
-    def __init__(self, row, column):
-        self.__set_neighbors(row, column)
-
-    def __set_neighbors(self, row, column):
+    def __init__(self, map):
+        self.sign = '.'
+        self.uncovered = False
+        self.marked = False
+        self.map = map
         self.neighbors = []
 
-        if row > 0:
-            self.neighbors.append((row - 1, column))
+    def set_neighbors(self, row, column):
+        neighbors = []
 
-        if row < Cell.__GRID_SIZE - 1:
-            self.neighbors.append((row + 1, column))
+        if row > 0:
+            neighbors.append((row - 1, column))
+
+        if row < GRID_SIZE - 1:
+            neighbors.append((row + 1, column))
 
         if column > 0:
-            self.neighbors.append((row, column - 1))
+            neighbors.append((row, column - 1))
 
-        if column < Cell.__GRID_SIZE - 1:
-            self.neighbors.append((row, column + 1))
+        if column < GRID_SIZE - 1:
+            neighbors.append((row, column + 1))
 
         if row > 0 and column > 0:
-            self.neighbors.append((row - 1, column - 1))
+            neighbors.append((row - 1, column - 1))
 
-        if row > 0 and column < Cell.__GRID_SIZE - 1:
-            self.neighbors.append((row - 1, column + 1))
+        if row > 0 and column < GRID_SIZE - 1:
+            neighbors.append((row - 1, column + 1))
 
-        if row < Cell.__GRID_SIZE - 1 and column > 0:
-            self.neighbors.append((row + 1, column - 1))
+        if row < GRID_SIZE - 1 and column > 0:
+            neighbors.append((row + 1, column - 1))
 
-        if row < Cell.__GRID_SIZE - 1 and column < Cell.__GRID_SIZE - 1:
-            self.neighbors.append((row + 1, column + 1))
+        if row < GRID_SIZE - 1 and column < GRID_SIZE - 1:
+            neighbors.append((row + 1, column + 1))
+
+        for r, c in neighbors:
+            self.neighbors.append(self.map[r][c])
 
     def mark_unmark(self):
         self.marked = not self.marked
+
+    def shows(self):
+        if self.marked:
+            return '@'
+        elif not self.marked and self.uncovered:
+            return self.sign
+        else:
+            return '#'
 
     def uncover(self):
         self.uncovered = True
@@ -58,19 +67,25 @@ class Cell:
                     if cell.sign == '*' and not cell.marked and not cell.uncovered:
                         cell.uncovered = True
 
-        if self.sign == '.':
-            for row, column in self.neighbors:
-                cell = self.map[row][column]
-
-                if type(cell.sign) == int:
-                    cell.uncovered = True
-                else:
-                    cell.uncover()
+        elif self.sign == '.':
+            for neighbor in self.neighbors:
+                if not neighbor.uncovered:
+                    if neighbor.sign.isnumeric():
+                        neighbor.uncovered = True
+                    else:
+                        neighbor.uncover()
 
 
 def set_bombs():
-    map = [[Cell(row, column) for row in range(GRID_SIZE)] for column in range(GRID_SIZE)]
-    Cell.map = map
+    map = [[[None] for row in range(GRID_SIZE)] for column in range(GRID_SIZE)]
+
+    for row in range(GRID_SIZE):
+        for column in range(GRID_SIZE):
+            map[row][column] = Cell(map)
+
+    for row in range(GRID_SIZE):
+        for column in range(GRID_SIZE):
+            map[row][column].set_neighbors(row, column)
 
     count = 0
     while count < MINES_N:
@@ -98,21 +113,19 @@ def new_game():
             if cell.sign == '*':
                 continue
 
-            for n_row, n_col in cell.neighbors:
-                neighbors_cell = game[n_row][n_col]
-
+            for neighbors_cell in cell.neighbors:
                 if neighbors_cell.sign == '*':
                     if cell.sign == '.':
                         cell.sign = 0
 
-                    cell.sign = cell.sign + 1
+                    cell.sign = str(int(cell.sign) + 1)
 
     return game
 
 
 def print_map(map):
     # os.system("cls" if os.name == "nt" else "clear")
-    print(' ' * 3, ' '.join([str(x + 1) for x in range(8)]))
+    print(' ' * 3,  ' '.join([str(x + 1) for x in range(8)]))
     print(' ' * 3, '-' * 16)
 
     bombs = 0
@@ -124,12 +137,9 @@ def print_map(map):
             cell = map[row][col]
 
             if cell.marked:
-                columns.append('@')
                 bombs += 1
-            elif not cell.marked and cell.uncovered:
-                columns.append(str(cell.sign))
-            else:
-                columns.append("#")
+
+            columns.append(cell.shows())
 
         print(row + 1, "|", " ".join(columns))
 
@@ -205,14 +215,22 @@ def get_input(map):
 
 
 if __name__ == "__main__":
-    m = new_game()
+    map = new_game()
 
-    while True:
-        print_map(m)
+    map[0][0].neighbors[0].uncover()
+    print(map[0][0].neighbors[0].uncovered)
+    print(map[0][0].neighbors[1].uncovered)
+    print(map[0][0].neighbors[2].uncovered)
+    print(map[0][0].uncovered)
+    print(map[0][1].uncovered)
+    print(map[0][2].uncovered)
 
-        option, row, column = get_input(m)
-
-        if option == 'a':
-            m[row - 1][column - 1].uncover()
-        elif option == 'b':
-            m[row - 1][column - 1].mark_unmark()
+    # while True:
+    #     print_map(m)
+    #
+    #     option, row, column = get_input(m)
+    #
+    #     if option == 'a':
+    #         m[row - 1][column - 1].uncover()
+    #     elif option == 'b':
+    #         m[row - 1][column - 1].mark_unmark()

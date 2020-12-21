@@ -56,6 +56,25 @@ class Cell:
         else:
             return '#'
 
+    def uncover(self):
+        self.uncovered = True
+
+        if self.sign == '*':
+            for row in range(GRID_SIZE):
+                for column in range(GRID_SIZE):
+                    cell = self.map[row][column]
+
+                    if cell.sign == '*' and not cell.marked and not cell.uncovered:
+                        cell.uncovered = True
+
+        elif self.sign == '.':
+            for neighbor in self.neighbors:
+                if not neighbor.uncovered:
+                    if neighbor.sign.isnumeric():
+                        neighbor.uncovered = True
+                    else:
+                        neighbor.uncover()
+
 
 def set_bombs():
     map = [[[None] for row in range(GRID_SIZE)] for column in range(GRID_SIZE)]
@@ -106,7 +125,7 @@ def new_game():
 
 def print_map(map):
     # os.system("cls" if os.name == "nt" else "clear")
-    print(' ' * 3,  ' '.join([str(x + 1) for x in range(8)]))
+    print(' ' * 3, ' '.join([str(x + 1) for x in range(8)]))
     print(' ' * 3, '-' * 16)
 
     bombs = 0
@@ -195,8 +214,99 @@ def get_input(map):
                 print('Invalid row or column. Please try again.')
 
 
-if __name__ == "__main__":
-    game = new_game()
+def wins(map):
+    count = 0
 
+    for row in range(GRID_SIZE):
+        for col in range(GRID_SIZE):
+            cell = map[row][col]
+
+            if cell.uncovered:
+                if cell.sign == '*':
+                    return False
+
+                count += 1
+
+    return count == GRID_SIZE * GRID_SIZE - MINES_N
+
+
+def losses(map):
+    for row in range(GRID_SIZE):
+        for col in range(GRID_SIZE):
+            cell = map[row][col]
+
+            if cell.uncovered and cell.sign == '*':
+                return True
+
+    return False
+
+
+def save_game(map, filename):
+    f = open(filename, 'w')
+
+    for row in map:
+        for col in row:
+            f.write(f"{col.sign} {col.uncovered} {col.marked}\n")
+
+    f.close()
+
+
+def load_game(filename):
+    f = open(filename)
+
+    rows = f.readlines()
+
+    map = [[[None] for row in range(GRID_SIZE)] for column in range(GRID_SIZE)]
+
+    row_index = 0
+
+    for row in range(GRID_SIZE):
+        for col in range(GRID_SIZE):
+            cell_data = rows[row_index].strip().split(' ')
+            row_index += 1
+
+            cell = Cell(map)
+
+            cell.sign = cell_data[0]
+            cell.uncovered = eval(cell_data[1])
+            cell.marked = eval(cell_data[2])
+
+            map[row][col] = cell
+
+    f.close()
+
+    return map
+
+
+def load_game_smart(filename):
+    f = open(filename)
+
+    rows = f.readlines()
+
+    map = [[[None] for row in range(GRID_SIZE)] for column in range(GRID_SIZE)]
+
+    row_index = 0
+
+    for row in range(GRID_SIZE):
+        for col in range(GRID_SIZE):
+            cell_data = rows[row_index].strip().split(' ')
+            row_index += 1
+
+            cell = Cell(map)
+
+            cell.sign = cell_data[0]
+            cell.uncovered = eval(cell_data[1])
+            cell.marked = eval(cell_data[2])
+
+            cell.set_neighbors(row, col)
+
+            map[row][col] = cell
+
+    f.close()
+
+    return map
+
+
+if __name__ == "__main__":
+    game = load_game('game.txt')
     print_map(game)
-    print(get_input(game))
